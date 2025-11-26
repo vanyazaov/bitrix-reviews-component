@@ -1,0 +1,257 @@
+// Переменные
+$primary-color: #2c3e50;
+$secondary-color: #3498db;
+$success-color: #27ae60;
+$error-color: #e74c3c;
+$warning-color: #f39c12;
+$light-gray: #ecf0f1;
+$medium-gray: #bdc3c7;
+$dark-gray: #7f8c8d;
+
+// Миксины
+@mixin flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@mixin transition($property: all, $duration: 0.3s) {
+    transition: $property $duration ease;
+}
+
+@mixin mobile {
+    @media (max-width: 768px) {
+        @content;
+    }
+}
+
+// Основные стили
+.reviews-list {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    font-family: 'Arial', sans-serif;
+
+    .reviews-header {
+        text-align: center;
+        margin-bottom: 30px;
+
+        h2 {
+            color: $primary-color;
+            margin-bottom: 10px;
+        }
+
+        .reviews-stats {
+            color: $dark-gray;
+            font-size: 14px;
+        }
+    }
+}
+
+// Форма отзыва
+.review-form-container {
+    background: $light-gray;
+    padding: 25px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+
+    h3 {
+        margin-bottom: 20px;
+        color: $primary-color;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: $primary-color;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid $medium-gray;
+            border-radius: 4px;
+            font-size: 14px;
+            @include transition(border-color);
+
+            &:focus {
+                outline: none;
+                border-color: $secondary-color;
+            }
+
+            &.error {
+                border-color: $error-color;
+            }
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .error-message {
+            color: $error-color;
+            font-size: 12px;
+            margin-top: 5px;
+            display: none;
+
+            &.show {
+                display: block;
+            }
+        }
+    }
+
+    .submit-btn {
+        background: $secondary-color;
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 4px;
+        font-size: 16px;
+        cursor: pointer;
+        @include transition(background-color);
+
+        &:hover:not(:disabled) {
+            background: darken($secondary-color, 10%);
+        }
+
+        &:disabled {
+            background: $medium-gray;
+            cursor: not-allowed;
+        }
+    }
+}
+
+// Карточки отзывов
+.reviews-container {
+    .no-reviews {
+        text-align: center;
+        padding: 40px;
+        color: $dark-gray;
+        font-style: italic;
+    }
+}
+
+.review-card {
+    background: white;
+    border: 1px solid $light-gray;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    @include transition(box-shadow);
+
+    &:hover {
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .review-header {
+        @include flex-center;
+        justify-content: space-between;
+        margin-bottom: 15px;
+
+        @include mobile {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 5px;
+        }
+
+        .review-author {
+            font-weight: bold;
+            color: $primary-color;
+            font-size: 16px;
+        }
+
+        .review-date {
+            color: $dark-gray;
+            font-size: 12px;
+        }
+    }
+
+    .review-rating {
+        @include flex-center;
+        gap: 10px;
+        margin-bottom: 15px;
+
+        .stars {
+            .star {
+                color: $medium-gray;
+                font-size: 18px;
+                @include transition(color);
+
+                &.active {
+                    color: $warning-color;
+                }
+            }
+        }
+
+        .rating-value {
+            color: $dark-gray;
+            font-size: 14px;
+        }
+    }
+
+    .review-text {
+        line-height: 1.5;
+        color: $primary-color;
+    }
+}
+
+// Уведомления
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 20px;
+    border-radius: 4px;
+    color: white;
+    z-index: 1000;
+    @include transition(all);
+
+    &.success {
+        background: $success-color;
+    }
+
+    &.error {
+        background: $error-color;
+    }
+
+    &.hidden {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+}
+
+// Адаптивность
+@include mobile {
+    .reviews-list {
+        padding: 10px;
+    }
+
+    .review-form-container {
+        padding: 15px;
+    }
+
+    .review-card {
+        padding: 15px;
+    }
+}
+
+// Анимации
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.review-card {
+    animation: fadeIn 0.5s ease;
+}
+
+// Состояние загрузки
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}

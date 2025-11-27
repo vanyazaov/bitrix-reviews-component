@@ -7,7 +7,7 @@ class ReviewId
 
     public function __construct(int $value)
     {
-        if ($value <= 0) {
+        if ($value < 0) {
             throw new \InvalidArgumentException('Идентификатор отзыва должен быть положительным.');
         }
         $this->value = $value;

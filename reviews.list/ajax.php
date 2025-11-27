@@ -10,6 +10,9 @@ use Bitrix\Main\Application;
 use Custom\Reviews\Component\Lib\Infrastructure\Repository\OrmReviewRepository;
 use Custom\Reviews\Component\Lib\Application\Service\ReviewService;
 
+// Подключаем автолоадер
+require_once __DIR__ . '/autoload.php';
+
 /**
  * AJAX обработчик для добавления отзывов
  */

@@ -4,7 +4,7 @@ if (!defined("B_PROLOG_INCLUDED") || B_PROLOG_INCLUDED !== true) die();
 /** @var array $arResult */
 ?>
 
-<div class="reviews-list" id="reviews-component-<?= $this->randString() ?>">
+<div class="reviews-list" id="reviews-component-<?= $this->randString() ?>" data-ajax-url="<?= $componentPath ?>/ajax.php">
     <!-- Статус кеша для отладки -->
     <?php if ($_GET['debug_cache']): ?>
     <div class="cache-info" style="background: #<?= $arResult['CACHE_INFO']['type'] === 'cached' ? '90EE90' : 'FFB6C1'; ?>; padding: 5px; margin: 10px 0;">

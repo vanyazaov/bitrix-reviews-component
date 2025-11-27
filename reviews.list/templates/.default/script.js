@@ -2,7 +2,7 @@
  * Reviews List Component - ES6+ Module
  * AJAX функциональность для компонента отзывов
  */
- if (typeof ReviewsComponent === 'undefined') {
+// if (typeof ReviewsComponent === 'undefined') {
      class ReviewsComponent {
         constructor(containerId) {
             this.container = document.getElementById(containerId);
@@ -36,32 +36,131 @@
         }
 
         /**
-         * Обработчик отправки формы
+         * Оптимистичное обновление
          */
         async handleFormSubmit(event) {
             event.preventDefault();
             
             const form = event.target;
             const formData = new FormData(form);
+            
+            if (!this.validateForm(form)) return;
 
-            // Валидация перед отправкой
-            if (!this.validateForm(form)) {
-                this.showNotification('Пожалуйста, исправьте ошибки в форме', 'error');
-                return;
-            }
-
-            // Блокируем форму на время отправки
+            // 1. СОЗДАЕМ ОПТИМИСТИЧНЫЙ ОТЗЫВ (immediately)
+            const optimisticReview = this.createOptimisticReview(formData);
+            const optimisticElement = this.createReviewElement(optimisticReview);
+            this.addNewReviewToDOM(optimisticElement, true); // true = isOptimistic
+            
+            // 2. ОБНОВЛЯЕМ СЧЕТЧИК
+            this.updateReviewsCount(1);
+            
+            // 3. БЛОКИРУЕМ ФОРМУ
             this.setFormLoadingState(form, true);
 
             try {
-                await this.submitReview(formData);
-                this.handleSuccess(form);
+                // 4. ОТПРАВЛЯЕМ НА СЕРВЕР
+                const result = await this.submitReview(formData);
+                
+                // 5. ЗАМЕНЯЕМ ОПТИМИСТИЧНЫЙ ОТЗЫВ РЕАЛЬНЫМИ ДАННЫМИ
+                this.replaceWithRealReview(optimisticElement, result.data.review);
+                this.showNotification('Отзыв успешно добавлен!', 'success');
+                
             } catch (error) {
+                // 6. ОБРАБОТКА ОШИБОК - откатываем оптимистичное обновление
+                this.rollbackOptimisticUpdate(optimisticElement);
                 this.handleError(error);
             } finally {
                 this.setFormLoadingState(form, false);
+                form.reset();
             }
         }
+        
+        /**
+         * Создание оптимистичного отзыва (до ответа сервера)
+         */
+        createOptimisticReview(formData) {
+            return {
+                ID: 'temp-' + Date.now(), // временный ID
+                AUTHOR: formData.get('author'),
+                TEXT: formData.get('text'),
+                RATING: parseInt(formData.get('rating')),
+                FORMATTED_DATE: 'Только что',
+                IS_OPTIMISTIC: true // флаг для стилей
+            };
+        } 
+        
+        /**
+         * Добавление нового отзыва в DOM
+         */
+        addNewReviewToDOM(reviewElement, isOptimistic = false) {
+            const reviewsContainer = this.container.querySelector('.reviews-container');
+            const noReviewsElement = this.container.querySelector('.no-reviews');
+            
+            // Убираем сообщение "нет отзывов", если оно есть
+            if (noReviewsElement) {
+                noReviewsElement.remove();
+            }
+            
+            // Добавляем специальный класс для оптимистичных отзывов
+            if (isOptimistic) {
+                reviewElement.classList.add('review-optimistic');
+            }
+            
+            // Добавляем в начало списка (самый новый сверху)
+            if (reviewsContainer.firstChild) {
+                reviewsContainer.insertBefore(reviewElement, reviewsContainer.firstChild);
+            } else {
+                reviewsContainer.appendChild(reviewElement);
+            }
+            
+            // Анимация появления
+            this.animateNewReview(reviewElement);
+            
+            return reviewElement;
+        }      
+        
+        /**
+         * Замена оптимистичного отзыва реальными данными
+         */
+        replaceWithRealReview(optimisticElement, realReviewData) {
+            const realElement = this.createReviewElement(realReviewData);
+            
+            // Плавная замена
+            optimisticElement.style.opacity = '0.5';
+            optimisticElement.style.transform = 'scale(0.95)';
+            
+            setTimeout(() => {
+                optimisticElement.replaceWith(realElement);
+                this.animateNewReview(realElement);
+            }, 300);
+        }
+
+        /**
+         * Откат оптимистичного обновления при ошибке
+         */
+        rollbackOptimisticUpdate(optimisticElement) {
+            // Анимация исчезновения
+            optimisticElement.style.transition = 'all 0.3s ease';
+            optimisticElement.style.opacity = '0';
+            optimisticElement.style.transform = 'translateX(-100%)';
+            
+            setTimeout(() => {
+                optimisticElement.remove();
+                
+                // Проверяем, не остался ли список пустым
+                const reviewsContainer = this.container.querySelector('.reviews-container');
+                if (!reviewsContainer.children.length) {
+                    reviewsContainer.innerHTML = `
+                        <div class="no-reviews">
+                            <p>Пока нет отзывов. Будьте первым!</p>
+                        </div>
+                    `;
+                }
+            }, 300);
+            
+            // Откатываем счетчик
+            this.updateReviewsCount(-1);
+        }             
 
         /**
          * Валидация формы
@@ -182,7 +281,13 @@
          * Отправка отзыва через AJAX
          */
         async submitReview(formData) {
-            const response = await fetch('', {
+            console.log('🔄 Starting submit (with artificial delay)...');
+    
+            // ИСКУССТВЕННАЯ ЗАДЕРЖКА 3 СЕКУНДЫ
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            
+            const ajaxUrl = this.container.getAttribute('data-ajax-url');
+            const response = await fetch(ajaxUrl, {
                 method: 'POST',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
@@ -321,13 +426,14 @@
         }
 
         /**
-         * Создание HTML для нового отзыва (альтернатива перезагрузке)
+         * Создание HTML для отзыва
          */
         createReviewElement(reviewData) {
             const reviewElement = document.createElement('div');
             reviewElement.className = 'review-card';
             reviewElement.setAttribute('data-review-id', reviewData.ID);
 
+            // Создаем звезды рейтинга
             const starsHtml = Array.from({ length: 5 }, (_, i) => 
                 `<span class="star ${i < reviewData.RATING ? 'active' : ''}">★</span>`
             ).join('');
@@ -341,16 +447,25 @@
                     <div class="stars">${starsHtml}</div>
                     <span class="rating-value">${reviewData.RATING}/5</span>
                 </div>
-                <div class="review-text">${this.escapeHtml(reviewData.TEXT)}</div>
+                <div class="review-text">${this.nl2br(this.escapeHtml(reviewData.TEXT))}</div>
             `;
 
             return reviewElement;
         }
 
         /**
+         * Замена переносов строк на <br>
+         */
+        nl2br(str) {
+            if (typeof str !== 'string') return str;
+            return str.replace(/\n/g, '<br>');
+        }
+
+        /**
          * Экранирование HTML
          */
         escapeHtml(unsafe) {
+            if (typeof unsafe !== 'string') return unsafe;
             return unsafe
                 .replace(/&/g, "&amp;")
                 .replace(/</g, "&lt;")
@@ -358,8 +473,49 @@
                 .replace(/"/g, "&quot;")
                 .replace(/'/g, "&#039;");
         }
+        
+        
+         /**
+         * Анимация появления нового отзыва
+         */
+        animateNewReview(element) {
+            // Убедимся, что элемент видим
+            element.style.opacity = '0';
+            element.style.transform = 'translateY(-20px)';
+            element.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+            
+            // Запускаем анимацию в следующем фрейме
+            requestAnimationFrame(() => {
+                element.style.opacity = '1';
+                element.style.transform = 'translateY(0)';
+            });
+            
+            // Убираем inline стили после анимации (опционально)
+            setTimeout(() => {
+                element.style.transition = '';
+            }, 300);
+        }
+
+        /**
+         * Анимация удаления отзыва
+         */
+        animateRemoveReview(element, callback) {
+            element.style.transition = 'all 0.3s ease';
+            element.style.opacity = '0';
+            element.style.transform = 'translateX(-100%)';
+            element.style.maxHeight = '0';
+            element.style.marginBottom = '0';
+            element.style.paddingTop = '0';
+            element.style.paddingBottom = '0';
+            element.style.overflow = 'hidden';
+            
+            setTimeout(() => {
+                if (callback) callback();
+            }, 300);
+        }       
+        
     }
- } 
+// } 
 
 
 // Инициализация компонента при загрузке DOM

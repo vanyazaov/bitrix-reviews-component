@@ -14,11 +14,13 @@
 
 ## 🏗️ Архитектура
 
+```
 Reviews (Агрегат)
 ├── Review (Entity)
 ├── Value Objects (Rating, Author, Text, ReviewId)
 ├── Repository Pattern
 └── Service Layer
+```
 
 ## 📦 Установка
 
@@ -33,7 +35,9 @@ CREATE TABLE custom_reviews (
     CREATED_AT DATETIME NOT NULL,
     USER_ID INT NULL
 );
+```
 3. Добавьте на страницу:
+
 ```php
 <?php
 $APPLICATION->IncludeComponent(
@@ -48,6 +52,7 @@ $APPLICATION->IncludeComponent(
 ```
 ## 📁 Структура
 
+```
 /local/components/custom/reviews.list/
 ├── class.php                  # Основной класс компонента
 ├── .description.php           # Описание для админки
@@ -67,6 +72,7 @@ $APPLICATION->IncludeComponent(
 │       ├── style.scss         # SASS стили
 │       └── style.css          # Скомпилированные стили
 └── README.md
+```
 
 ## 🎨 Интерфейс
 
@@ -83,6 +89,6 @@ $APPLICATION->IncludeComponent(
 - Ленивая загрузка ресурсов
 - Минимизация перерисовок DOM
 
---
+---
 
 Разработано в рамках тестового задания. Демонстрирует владение современными подходами к разработке на Bitrix.
